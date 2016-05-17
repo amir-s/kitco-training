@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html ng-app="testapp">
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+    <script>
+	    var app = angular.module('testapp', []);
+
+	    var InputController = function ($http, $q, APIService) {
+	    	this.tasks = [];
+
+
+	    	APIService.getTasks().then(function (data) {
+	    		this.tasks = data;
+	    	}.bind(this));
+	    	
+	    	this.newLabel = '';
+
+	    	this.add = function () {
+
+	    		$http.post('/task', {label: this.newLabel}).then(function(resp) {
+	    			console.log(resp.data);
+	    		})
+
+	    		this.tasks.push({
+	    			label: this.newLabel,
+	    			checked: false
+	    		});
+	    		this.newLabel= '';
+	    	}
+
+	    	this.count = function () {
+	    		return this.tasks.filter(function (item) {
+	    			return !item.checked;
+	    		}).length;
+	    	}
+
+	    	this.clear = function () {
+	    		this.tasks = this.tasks.filter(function (item) {
+	    			return !item.checked;
+	    		});
+	    	}
+
+	    	this.changed = function(ind) {
+	    		$http.post('/updateTask', {index: ind, checked: this.tasks[ind].checked});
+	    	}
+	    }
+
+	    InputController.$inject = ['$http', '$q', 'APIService']
+
+	    app.controller('InputController', InputController);
+
+	    app.service('APIService', function ($http) {
+	    	this.getTasks = function () {
+	    		return $http.get('/tasks').then(function (resp) {
+		    		return resp.data;
+		    	});
+	    	}
+	    });
+
+    </script>
+    <style type="text/css">
+    .checked {
+    	text-decoration: line-through;
+    }
+    </style>
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <div ng-controller='InputController as vm'>
+    	<p>Open Tasks: {{vm.count()}}/{{vm.tasks.length}}</p>
+    	<ul>
+    		<li ng-class="{'checked': item.checked}" ng-repeat="item in vm.tasks track by $index"><input ng-change='vm.changed($index)' type='checkbox' ng-model='item.checked' />{{item.label}}</li>
+    	</ul>
+    	<br />
+    	<form ng-submit='vm.add()'>
+	    	<input type="text" ng-model='vm.newLabel' />
+	    	<button type="submit">Add</button>
+	    	<button type="button" ng-click="vm.clear()">Clear</button>
+    	</form>
+    </div>
+
+
+  </body>
+</html>

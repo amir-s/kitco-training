@@ -4,11 +4,33 @@
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
 	    var app = angular.module('testapp', []);
 
-	    var InputController = function ($http, $q, APIService) {
+
+	    app.service('Socket', function ($rootScope) {
+	    	var socket = io();
+
+	    	this.on = function (name, cb) {
+		    	socket.on(name, function (data) {
+		    		$rootScope.$apply(function () {
+		    			cb(data);
+		    		});
+		    	});
+	    	}
+
+	    })
+    	
+
+
+	    var InputController = function ($http, $q, APIService, Socket) {
 	    	this.tasks = [];
+
+	    	Socket.on('newTask', function (task) {
+	    		this.tasks.push(task);
+	    		this.newLabel= '';
+	    	}.bind(this))
 
 
 	    	APIService.getTasks().then(function (data) {
@@ -20,14 +42,9 @@
 	    	this.add = function () {
 
 	    		$http.post('/task', {label: this.newLabel}).then(function(resp) {
-	    			console.log(resp.data);
+	    			// console.log(resp.data);
 	    		})
-
-	    		this.tasks.push({
-	    			label: this.newLabel,
-	    			checked: false
-	    		});
-	    		this.newLabel= '';
+	    		
 	    	}
 
 	    	this.count = function () {
@@ -47,7 +64,7 @@
 	    	}
 	    }
 
-	    InputController.$inject = ['$http', '$q', 'APIService']
+	    InputController.$inject = ['$http', '$q', 'APIService', 'Socket']
 
 	    app.controller('InputController', InputController);
 

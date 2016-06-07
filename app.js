@@ -5,7 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-
+var io = null;
 var app = express();
 
 // view engine setup
@@ -40,6 +40,10 @@ app.get('/tasks', function (req, res) {
 
 app.post('/task', function (req, res) {
   tasks.push({
+    label: req.body.label,
+    checked: false
+  });
+  io.sockets.emit('newTask', {
     label: req.body.label,
     checked: false
   });
@@ -82,4 +86,23 @@ app.use(function(err, req, res, next) {
 });
 
 
-module.exports = app;
+
+var http = require('http');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+
+var server = http.createServer(app);
+server.listen(3000);
+
+io = require('socket.io')(server);
+
+io.on('connection', function (socket) {
+
+  socket.on('hello', function (data) {
+    console.log(data.name)
+  })
+  console.log("something connected")
+})
